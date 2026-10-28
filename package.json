@@ -1,0 +1,11 @@
+{
+  "name": "nonogram",
+  "version": "1.0.0",
+  "description": "Nonogram (paint-by-numbers) logic puzzles in the browser: hand-made pictures and fair random grids that line logic alone can solve.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
