@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fitCellSize } from '../src/layout.js';
+import { boardFits, fitCellSize } from '../src/layout.js';
 
 /** Clue areas that scale with the cell, with a minimum font like the real board. */
 const clueAreas = (rowSlots, colSlots) => (cell) => {
@@ -36,4 +36,14 @@ test('height can be the limiting side', () => {
   const measure = () => ({ width: 0, height: 0 });
   assert.equal(fitCellSize({ cols: 10, rows: 10, availWidth: 1000, availHeight: 305, min: 10, max: 60, measure }), 30);
   assert.equal(fitCellSize({ cols: 10, rows: 10, availWidth: 305, availHeight: 1000, min: 10, max: 60, measure }), 30);
+});
+
+test('boardFits agrees with the fitted size and reports overflow at the minimum', () => {
+  const options = { cols: 15, rows: 15, availWidth: 323, availHeight: 600, min: 14, max: 56, measure: clueAreas(8, 4) };
+  const cell = fitCellSize(options);
+  assert.equal(cell, 14);
+  assert.equal(boardFits(options, 14), false, 'an 8-number row clue overflows at 14 px');
+  const compact = { ...options, min: 12, max: 14, measure: clueAreas(5, 4) };
+  const smaller = fitCellSize(compact);
+  assert.ok(boardFits(compact, smaller), 'compact clues fit');
 });

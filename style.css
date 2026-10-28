@@ -364,8 +364,27 @@ button {
 }
 
 .board-box.zoomed .clue-row {
-  gap: 0.45em;
+  gap: 0.3em;
   padding: 0 0.45em 0 0.3em;
+}
+
+.board-box.zoomed .clue-row.long {
+  font-size: 11px;
+}
+
+/* Fitted boards whose long row clues would overflow even with the smallest cells. */
+.board-box.compact .clue {
+  font-size: 10px;
+}
+
+.board-box.compact .clue-row {
+  gap: 0.3em;
+  padding: 0 0.35em 0 0.2em;
+}
+
+.board-box.compact .clue-col {
+  padding: 2px 0 3px;
+  line-height: 1.1;
 }
 
 .board-box.zoomed .clue-col {

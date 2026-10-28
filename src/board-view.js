@@ -1,9 +1,11 @@
 import { CROSSED, FILLED } from './cells.js';
 import { el } from './dom.js';
-import { fitCellSize } from './layout.js';
+import { boardFits, fitCellSize } from './layout.js';
 
 /** Cell size limits (px) when the board is fitted to the screen. */
 const MIN_CELL = 14;
+/** Last resort for long clues on narrow screens: compact clues and cells down to this size. */
+const COMPACT_MIN_CELL = 12;
 const MAX_CELL = 56;
 /** Cell size when zoomed in: a comfortable finger target. */
 const ZOOM_CELL = 40;
@@ -18,6 +20,8 @@ const MIN_BOX_HEIGHT = 240;
 /** Border width (px) around the cell area; the clue lanes are offset by it in CSS too. */
 const CELLS_BORDER = 2;
 const FLASH_MS = 700;
+/** Row clues with this many numbers get a slightly smaller font when zoomed. */
+const LONG_CLUE = 6;
 
 /**
  * The puzzle board in the DOM: clue lanes plus a grid of cells, all sized by the --cell variable.
@@ -75,23 +79,16 @@ export class BoardView {
    * @returns {{canZoom: boolean, zoomed: boolean}} whether zooming helps, and whether it is on
    */
   layout(zoomed) {
-    this.box.classList.remove('zoomed');
+    this.box.classList.remove('zoomed', 'compact');
     this.box.style.maxHeight = '';
     this.#setCell(MIN_CELL);
     const space = this.#freeSpace();
-    const fitted = fitCellSize({
-      cols: this.cols,
-      rows: this.rows,
-      availWidth: space.width,
-      availHeight: space.height,
-      min: MIN_CELL,
-      max: MAX_CELL,
-      measure: (cell) => this.#measure(cell),
-    });
+    const fitted = this.#fit(space);
     const canZoom = fitted < ZOOM_OFFER_BELOW;
     const zoom = zoomed && canZoom;
     // The zoomed board uses a smaller clue font, so the class goes on before the clue lane is measured.
     this.box.classList.toggle('zoomed', zoom);
+    if (zoom) this.box.classList.remove('compact');
     this.#setCell(zoom ? ZOOM_CELL : fitted);
     this.board.style.setProperty('--rcw', `${this.rowClues.offsetWidth}px`);
     if (zoom) this.box.style.maxHeight = `${space.height}px`;
@@ -223,6 +220,26 @@ export class BoardView {
   }
 
   /** Space the board needs besides its cells when cells are `cell` px. */
+  /**
+   * Fitted cell size; when even the smallest cell overflows, compact clues and smaller cells are tried
+   * before the box falls back to scrolling.
+   */
+  #fit(space) {
+    const options = {
+      cols: this.cols,
+      rows: this.rows,
+      availWidth: space.width,
+      availHeight: space.height,
+      min: MIN_CELL,
+      max: MAX_CELL,
+      measure: (cell) => this.#measure(cell),
+    };
+    const fitted = fitCellSize(options);
+    if (fitted > MIN_CELL || boardFits(options, MIN_CELL)) return fitted;
+    this.box.classList.add('compact');
+    return fitCellSize({ ...options, min: COMPACT_MIN_CELL, max: MIN_CELL });
+  }
+
   #measure(cell) {
     this.#setCell(cell);
     return {
@@ -256,7 +273,9 @@ export class BoardView {
 /** A clue lane; an empty line shows a single 0. */
 function clueNode(className, clue) {
   const numbers = clue.length > 0 ? clue : [0];
-  return el('div', { className }, numbers.map((n) => el('span', { text: String(n) })));
+  const node = el('div', { className }, numbers.map((n) => el('span', { text: String(n) })));
+  node.classList.toggle('long', numbers.length >= LONG_CLUE);
+  return node;
 }
 
 /** A cell with the classes for thicker lines between blocks of five and no line on the outer edge. */

@@ -17,11 +17,9 @@
  * @param {(cell: number) => {width: number, height: number}} options.measure extra px next to and above the cells
  * @returns {number} cell size in px
  */
-export function fitCellSize({ cols, rows, availWidth, availHeight, min, max, measure }) {
-  const fits = (cell) => {
-    const extra = measure(cell);
-    return extra.width + cols * cell <= availWidth && extra.height + rows * cell <= availHeight;
-  };
+export function fitCellSize(options) {
+  const { min, max } = options;
+  const fits = (cell) => boardFits(options, cell);
   if (fits(max)) return max;
   if (!fits(min)) return min;
   let low = min;
@@ -32,4 +30,16 @@ export function fitCellSize({ cols, rows, availWidth, availHeight, min, max, mea
     else high = mid;
   }
   return low;
+}
+
+/**
+ * Whether the board with a given cell size fits the available space.
+ * @param {{cols: number, rows: number, availWidth: number, availHeight: number,
+ *   measure: (cell: number) => {width: number, height: number}}} options as for fitCellSize
+ * @param {number} cell cell size in px
+ * @returns {boolean}
+ */
+export function boardFits({ cols, rows, availWidth, availHeight, measure }, cell) {
+  const extra = measure(cell);
+  return extra.width + cols * cell <= availWidth && extra.height + rows * cell <= availHeight;
 }
